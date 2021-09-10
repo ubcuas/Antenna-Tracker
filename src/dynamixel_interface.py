@@ -60,13 +60,13 @@ class DynamixelInterface:
         # Disable them if they do.
         for entry in self.motor_thresholds.items():
             DXL_ID, threshold = entry
-            if(abs(sunflower.read_motor_load(DXL_ID))>threshold):
+            if(abs(self.read_motor_load(DXL_ID))>threshold):
                 if(self.motor_torque_states[DXL_ID]!=0):
-                    sunflower.set_torque_state(DXL_ID, 0)
+                    self.set_torque_state(DXL_ID, 0)
                     self.motor_torque_states[DXL_ID]=0
             else:
                 if(self.motor_torque_states[DXL_ID]!=1):
-                    sunflower.set_torque_state(DXL_ID, 1)
+                    self.set_torque_state(DXL_ID, 1)
                     self.motor_torque_states[DXL_ID]=1
 
     def run(self):
