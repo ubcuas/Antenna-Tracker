@@ -38,6 +38,7 @@ class DynamixelInterface:
         else:
             self._print("Torque set to "+str(TORQUE_STATE)+" for DXL_"+str(DXL_ID))
 
+    # This function is not correct
     def u16_to_i16(self, x):
         # Unsigned Decimal in Two's Complement -> Signed Decimal
         if(x>32767):

@@ -3,7 +3,7 @@ from dynamixel_interface import DynamixelInterface
 from gps_interface import GPSInterface
 from lsm9ds1_interface import LSM9DS1Interface
 
-U2D2_PORT_NAME = "/dev/ttyUSB0"
+U2D2_PORT_NAME = "/dev/tty.usbserial-FT4TFLAV"
 GPS_PORT_NAME = "/dev/tty.usbmodem14401"
 LSM9DS1_I2C_ADDR = 0xe6
 LSM9DS1_I2C_BUS = 5
@@ -21,10 +21,10 @@ xl430_w250_control_table = {
     'velocity_limit':44
 }
 
-# motors = DynamixelInterface(xl430_w250_control_table, debug=True)
-# motors.connect(U2D2_PORT_NAME, 57600, 2.0)
-# motors.register_motor(1, load_threshold=5)
-# motors.register_motor(2, load_threshold=10)
+motors = DynamixelInterface(xl430_w250_control_table, debug=True)
+motors.connect(U2D2_PORT_NAME, 57600, 2.0)
+motors.register_motor(1, load_threshold=5)
+motors.register_motor(2, load_threshold=10)
 
 # gps = GPSInterface(GPS_PORT_NAME, 9600)
 
@@ -39,7 +39,7 @@ multisensor = LSM9DS1Interface(LSM9DS1_I2C_ADDR, LSM9DS1_I2C_BUS)
 
 while(1):
     time.sleep(0.2)
-    # motors.run()
+    motors.run()
     # gps.read()
-    multisensor.read()
+    # multisensor.read()
     # print(repr(gps.gps_data))
