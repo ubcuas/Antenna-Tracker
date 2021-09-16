@@ -3,6 +3,7 @@ import pynmea2
 
 class GPSInterface:
     def __init__(self, port, baudrate):
+        self.port = port
         self.gps_data = {
             "lat":None,
             "lng":None,
@@ -71,6 +72,8 @@ class GPSInterface:
         return False
 
     def read(self):
+        if self.ser is None:
+            return 0
         nmea = self.ser.readline().decode('ascii', errors='replace').strip()
         try:
             nmeaobj = pynmea2.parse(nmea)
