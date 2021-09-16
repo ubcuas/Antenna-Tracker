@@ -30,12 +30,16 @@ motors.set_operating_mode(1, 'position')
 motors.set_operating_mode(2, 'velocity')
 
 motors.set_goal_velocity(2, 20)
+motors.set_goal_position(1, 2898)
 time.sleep(2)
 motors.set_goal_velocity(2, 0)
+motors.set_goal_position(1, 2658)
 time.sleep(2)
 motors.set_goal_velocity(2, -20)
 time.sleep(2)
 motors.set_goal_velocity(2, 0)
+motors.set_goal_position(1, 2898)
+
 
 # gps = GPSInterface(GPS_PORT_NAME, 9600)
 

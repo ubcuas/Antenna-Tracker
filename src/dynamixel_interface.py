@@ -70,6 +70,16 @@ class DynamixelInterface:
             self._print("GOAL_VELOCITY SET TO "+str(GOAL_VELOCITY)+" FOR DXL_"+str(DXL_ID))
         pass
 
+    def set_goal_position(self, DXL_ID, GOAL_POSITION):
+        dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, DXL_ID, self.control_table['goal_position'], GOAL_POSITION)
+        if dxl_comm_result != COMM_SUCCESS:
+            self._print("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
+        elif dxl_error != 0:
+            self._print("%s" % self.packetHandler.getRxPacketError(dxl_error))
+        else:
+            self._print("GOAL_VELOCITY SET TO "+str(GOAL_POSITION)+" FOR DXL_"+str(DXL_ID))
+        pass
+
     # This function is not correct
     def u16_to_i16(self, x):
         # Unsigned Decimal in Two's Complement -> Signed Decimal
