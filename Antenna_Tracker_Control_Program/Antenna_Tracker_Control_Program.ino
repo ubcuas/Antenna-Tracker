@@ -255,8 +255,9 @@ void setup() {
 
   calibrate_tracker();
 
-  Serial.println("Please enter the coordinates in the format: latitude,longitude \0(USER/GCOM RESPONSE)");
-  String input = Serial.readStringUntil('\n');
+  Serial.println("Please enter the coordinates in the format: latitude,longitude (USER/GCOM RESPONSE)");
+  String userInput = Serial.readStringUntil('\n');
+  
 }
 
 
@@ -270,13 +271,13 @@ void loop() {
   // put your main code here, to run repeatedly:
   // Retreive data from serial monitor input
   while (Serial.available() > 0) {
-    Serial.println("Please enter the coordinates in the format: latitude,longitude \0(USER/GCOM RESPONSE)");
+    Serial.println("Please enter the coordinates in the format: latitude,longitude (USER/GCOM RESPONSE)");
     String input = Serial.readStringUntil('\n');
     input.trim();
 
     int commaIndex = input.indexOf(',');
     if (commaIndex == -1) {
-      Serial.println("Invalid input. Please enter the coordinates in the format: latitude,longitude \0(ARDUINO RESPONSE)");
+      Serial.println("Invalid input. Please enter the coordinates in the format: latitude,longitude (ARDUINO RESPONSE)");
       continue;
     }
 
