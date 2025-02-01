@@ -1,3 +1,4 @@
+
 /*
 * Author: Pablo Islas
 * Date: July 16th, 2024
@@ -297,8 +298,3 @@ void loop() {
   Hstepper.run();
   Vstepper.run();
 }
-
-
-
-
-

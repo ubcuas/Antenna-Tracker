@@ -8,5 +8,5 @@ antenna.startup_calibrate()
 
 # Connect to the telemetry server
 socket_events.gcom_connect(antenna)
-print("burger andy")
+
 
