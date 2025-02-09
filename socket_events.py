@@ -12,7 +12,9 @@ def gcom_connect(antenna):
     def connect():
         print("Connected")
         sio.emit("ping")
-        sio.emit("drone_update", {"timestamp" : 10, "latitude":20 , "altitude":10, "longitude" : 100, "vertical_velocity":10, "velocity":90, "heading":10, "battery_voltage":9 })
+        while True:
+            time.sleep(5)
+            sio.emit("drone_update", {"timestamp" : 10, "latitude":20 , "altitude":10, "longitude" : 100, "vertical_velocity":10, "velocity":90, "heading":10, "battery_voltage":9 })
 
     @sio.on("pong")
     def pong():

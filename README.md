@@ -4,3 +4,4 @@
 - python-socketio
 - websocket-client
 - serial
+- threading
