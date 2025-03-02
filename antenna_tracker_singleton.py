@@ -7,28 +7,31 @@ class AntennaTrackerSingleton():
     _antenna = None
 
     # SINGLETON CONSTRUCTION
-    @classmethod
-    def get_instance(cls):
+    # override object class' memory alloc function (bottom of call stack when you call class constructor)
+    def __new__(cls):
         """Get instance or generate instance of singleton"""
+        # cls = class instance, cls() = class constructor call (new)
         if not cls._antenna:
-            # cls = class instance, cls() = class constructor call
-            cls._antenna = cls()
+            # call Python's default object class allocation function and pass in this class (By default when you call
+            # any constructor the OBJECT class instance of __new__ [with the ability to allocate mem] is called)
+            cls._antenna = super().__new__(cls)
         return cls._antenna
+
     def __init__(self):
         """__new__ decides if this function is called when a user instantiates the class"""
         # initialize only once
-        if not hasattr(self, "calibrated"):
-            # public fields
-            self.calibrated = False
-            self.ser = serial.Serial(port="COM3", baudrate=9600) # starts the arduino sketch
-            self.awaitingInput = False
+        # public fields
+        self.calibrated = False
+        self.ser = serial.Serial(port="COM3", baudrate=9600) # starts the arduino sketch
+        self.awaitingInput = False
+        self.initial_telemetry = {} # empty dict
 
-            # private fields
-            self._awatingInputLock = threading.Lock()
+        # private fields
+        self._awatingInputLock = threading.Lock()
 
-            # create thread for flush_arduino, daemon = true => shutdown thread on main thread exit
-            message_thread = threading.Thread(target=self._flush_arduino, daemon=True)
-            message_thread.start()
+        # create thread for flush_arduino, daemon = true => shutdown thread on main thread exit
+        message_thread = threading.Thread(target=self._flush_arduino, daemon=True)
+        message_thread.start()
     
 # PRIVATE METHODS
     # perpetually runs asynchronusly in the background
@@ -56,7 +59,9 @@ class AntennaTrackerSingleton():
         Called by main, waits for the arduino to start up, flushes arduino, sends the y message to begin calibration.
         """
         # static boot timer to allow arduino to execute 
-        time.sleep(10)
+        time.sleep(5)
+        self.ser.write(bytes(f"{self.initial_telemetry['latitude']} , {self.initial_telemetry['longitude']}\n", "UTF-8"))
+        time.sleep(5)
         self.ser.write(bytes("y", "UTF-8"))
         # TODO: await response from arduino before doing this (ideally block the thread, but polling is fine ig; USE MESSAGING THREAD TO DO THIS???)
         while self.ser.in_waiting <= 0:
@@ -72,15 +77,18 @@ class AntennaTrackerSingleton():
     # 3. When the antenna tracker is ready to move again, the next thread that aquires the lock will send a position to the tracker
     # This should deal with asynchrony issues and overlapping drone_update_events.
 
-    # POTENTIAL ISSUE: A bunch of drone update threads start, and the flush_arduino thread grabs the lock last.
-
     # mutex send_serial and perpetual async loop.
-    def send_serial(self, posn_dict):
+    def send_serial(self, posn_dict, initial=False):
         """
         send a drone update to the arduino, multiple threads could be running this asynchronously
         we want the last thread initialized to have its position sent, then dump the rest.
         """
-        # auto aquires and releases lock
+        # simply save position for calibration if its the first transmission
+        # DO NOT MOVE DRONE UNTIL AFTER CALIBRATION, AND ONLY WHILE GCOM IS RECIEVING POSN
+        if initial:
+            self.initial_telemetry = posn_dict
+            return
+        # auto acquires and releases lock
         with self._awatingInputLock:
             print("serial LOCKED IN")
             # get user input if line returned by arduino requires some kind of response

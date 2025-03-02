@@ -4,17 +4,24 @@
 from typing import Any, List, Mapping
 import socketio
 import time
+
+
 def gcom_connect(antenna):
+    # initialize locals
+    print("HELLO DADDY PIM")
     sio = socketio.Client()
-    
+    init_pos_sent = False
+
     # Event listeners and handlers, all events run asynchronously
     @sio.event
     def connect():
         print("Connected")
         sio.emit("ping")
+        count = 0
         while True:
-            time.sleep(5)
-            sio.emit("drone_update", {"timestamp" : 10, "latitude":20 , "altitude":10, "longitude" : 100, "vertical_velocity":10, "velocity":90, "heading":10, "battery_voltage":9 })
+            count += 10
+            time.sleep(2)
+            sio.emit("drone_update", {"timestamp" : 10, "latitude":40 + count, "altitude":10, "longitude" : 40 + count, "vertical_velocity":10, "velocity":90, "heading":10, "battery_voltage":9 })
 
     @sio.on("pong")
     def pong():
@@ -22,7 +29,17 @@ def gcom_connect(antenna):
 
     @sio.on("drone_update")
     def handletelemetry(dict):
+        # nonlocal defn ensures variable references local in encapsulating function
+        nonlocal init_pos_sent
         print("telemetry recieved")
+        # send initial position for CALIBRATION procedure
+        if not init_pos_sent:
+            # TODO: Remove these fixed coords when testing with GCOM & Drone
+            dict['longitude'] = 49.3410252
+            dict['latitude'] = -123.1264776
+            antenna.send_serial(dict, True)
+            init_pos_sent = True
+            return
         antenna.send_serial(dict)
 
     @sio.event

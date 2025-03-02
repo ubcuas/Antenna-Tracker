@@ -1,4 +1,3 @@
-
 /*
 * Author: Pablo Islas
 * Date: July 16th, 2024
@@ -165,8 +164,7 @@ void calibrate_tracker(){
   Serial.println("DEBUG: Tracker's Position: " + String(trackerLat, 7) + "(lat), " + String(trackerLon, 7) + "(lon)");
 
   // Calibrate initial bearing and elevation angles (before takeoff)
-  targetLat = 49.3409915; // Temporary value, will be replaced with data collected from drone
-  targetLon = -123.1264555; // Temporary value, will be replaced with data collected from drone
+  get_posn_input();
   float target_ASL_elevation = 114; // Temporary value, will be replaced with data collected from drone
   float initial_displacement = ACTUAL_ASL - target_ASL_elevation; // Initial vertical distance between tracker and drone
   targetAlt = initial_displacement;
@@ -221,7 +219,28 @@ void calibrate_tracker(){
   Serial.println("Tracker calibrated.");
 }
 
+//HOLY FCKING POLLING
+void get_posn_input(){
+  while(true){
+    //express that input is needed, poll until input comes
+    Serial.println("AWAITING INPUT: Give coords or im gonna crash out.");
+    while(Serial.available() == 0){};
+    String input = Serial.readStringUntil("\n");
+    input.trim();
+    // if input does not have commas, crash out, better input validation will be needed when altitude comes into play
+    int commaIndex = input.indexOf(',');
+    if (commaIndex == -1) {
+      Serial.println("AWAITING INPUT: Invalid input. Please enter the coordinates in the format: latitude,longitude");
+      continue;
+    }
 
+    // Get target coordinate values
+    targetLat = input.substring(0, commaIndex).toFloat();
+    targetLon = input.substring(commaIndex + 1).toFloat();
+    targetAlt = 100;
+    break;
+  }
+}
 
 
 
@@ -255,37 +274,18 @@ void setup() {
   Serial.println("Serial connection established.");
 
   calibrate_tracker();
-
-  Serial.println("AWAITING INPUT: Please enter the coordinates in the format: latitude,longitude");
-  String userInput = Serial.readStringUntil('\n');
-  
 }
 
-
-// 49.2679805, -123.2448525 (North)
-// 49.2646732, -123.2415124 (East)
-// 49.2598840, -123.2464730 (South)
-// 49.2639150, -123.2552316 (West)
-
+// 49.3414623, -123.1263600 (North)
+// 49.3409323, -123.1250644 (East)
+// 49.3404088, -123.1265140 (South)
+// 49.3410062, -123.1278492 (West)
 
 void loop() {
   // put your main code here, to run repeatedly:
   // Retreive data from serial monitor input
   while (Serial.available() > 0) {
-    Serial.println("AWAITING INPUT: Please enter the coordinates in the format: latitude,longitude");
-    String input = Serial.readStringUntil('\n');
-    input.trim();
-
-    int commaIndex = input.indexOf(',');
-    if (commaIndex == -1) {
-      Serial.println("AWAITING INPUT: Invalid input. Please enter the coordinates in the format: latitude,longitude");
-      continue;
-    }
-
-    // Get target coordinate values
-    targetLat = input.substring(0, commaIndex).toFloat();
-    targetLon = input.substring(commaIndex + 1).toFloat();
-    targetAlt = 100;
+    get_posn_input();
 
     // Calculate bearing and elevation
     calculate_Bearing_and_Elevation();
