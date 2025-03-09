@@ -46,10 +46,13 @@ class AntennaTrackerSingleton():
         while True:
             # auto locks and releases
             value = self.ser.readline()
+            print("---------------------------------------------------------------------")
             value_str = str(value, "UTF-8")
             # if message is a string response from the Arduino
             print(value_str)
-            if "AWAITING INPUT" in value_str:
+            if "TRACKER CALIBRATED" in value_str.upper():
+                self.calibrated = True
+            if "AWAITING INPUT" in value_str.upper():
                 print("tracker waiting for input, next thread should send")
                 self.awaitingInput = True
                 
@@ -60,16 +63,16 @@ class AntennaTrackerSingleton():
         """
         # static boot timer to allow arduino to execute 
         time.sleep(5)
-        self.ser.write(bytes(f"{self.initial_telemetry['latitude']} , {self.initial_telemetry['longitude']}\n", "UTF-8"))
+        self.ser.write(bytes(f"{self.initial_telemetry['latitude']}, {self.initial_telemetry['longitude']}, {self.initial_telemetry['altitude']},\n", "UTF-8"))
+        self.awaitingInput = False # this line breaks everything :C
         time.sleep(5)
         self.ser.write(bytes("y", "UTF-8"))
-        # TODO: await response from arduino before doing this (ideally block the thread, but polling is fine ig; USE MESSAGING THREAD TO DO THIS???)
-        while self.ser.in_waiting <= 0:
+        # wait until arduino flushes out calibration message
+        while not self.calibrated:
             pass
-        self.calibrated = True
        
 
-    # TODO: As asynchronous drone_update events are passed in to the control of the program, we want to execute only the most recent one
+    # As asynchronous drone_update events are passed in to the control of the program, we want to execute only the most recent one
     # when the tracker is ready.
     # 1. We will measure readiness by reading strings from the serial port and looking for the substring "AWAITING INPUT" (done in a perpetual async loop).
     # 2. As threads arrive they will aquire a lock and check if drone is calibrated and ready for input, the thread will end with no action if the lock is aquired and
@@ -90,11 +93,13 @@ class AntennaTrackerSingleton():
             return
         # auto acquires and releases lock
         with self._awatingInputLock:
-            print("serial LOCKED IN")
+            print(f"Thread has input lock, awaitingInput: {self.awaitingInput}")
             # get user input if line returned by arduino requires some kind of response
             if(self.calibrated and self.awaitingInput):
-                message = f"{posn_dict['latitude']} , {posn_dict['longitude']}\n"
+                message = f"{posn_dict['latitude']}, {posn_dict['longitude']}, {posn_dict['altitude']},\n"
                 self.ser.write(message.encode())
                 self.awaitingInput = False
                 print(f"Sent: {message}")
+                return
+            print("message send failure")
       

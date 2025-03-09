@@ -29,6 +29,7 @@
 #define ACTUAL_LAT 49.2645884 // Temporary
 #define ACTUAL_LON -123.2465638 // Temporary
 #define ACTUAL_ASL 115
+// this is probably accurate enough
 #define EARTH_RADIUS 6371 // Earths radius in km
 
 TinyGPSPlus gps;
@@ -165,9 +166,6 @@ void calibrate_tracker(){
 
   // Calibrate initial bearing and elevation angles (before takeoff)
   get_posn_input();
-  float target_ASL_elevation = 114; // Temporary value, will be replaced with data collected from drone
-  float initial_displacement = ACTUAL_ASL - target_ASL_elevation; // Initial vertical distance between tracker and drone
-  targetAlt = initial_displacement;
   // Account for scenario where tracker is below drone before computing elevation angle
   if (targetAlt < 0){
     targetAlt = -targetAlt;
@@ -176,7 +174,7 @@ void calibrate_tracker(){
   calculate_Bearing_and_Elevation();
 
   // Two scenarios possible if tracker is above drone
-  if (initial_displacement > 0) {
+  if (targetAlt > 0) {
     // Scenario 1: drone is out of trackers vertical range (less than -13 degrees)
     if (elevation > 13) {
       Serial.println("ERROR: DRONE OUT OF RANGE. LOWER TRACKER OR RAISE DRONE AND RESTART PROGAM");
@@ -219,7 +217,51 @@ void calibrate_tracker(){
   Serial.println("Tracker calibrated.");
 }
 
-//HOLY FCKING POLLING
+
+// Return NULL when input brokey
+float* parse_and_validate_input(String input){
+  int commaIndex = input.indexOf(",");
+  int alreadyCoveredIndex = -1;
+  int inputSize = 0;
+  float* inputs = malloc(sizeof(float) * 3);
+
+  while(commaIndex != -1){
+    String validateMe = input.substring(alreadyCoveredIndex + 1, commaIndex);
+    bool decimalReached = false;
+    bool negativeReached = false;
+    for(int i = 0; i<validateMe.length(); i++){
+      // if character is not numeric or a decimal delimeter
+      if((validateMe[i] < '0' || validateMe[i] > '9') && validateMe[i] != '.' && validateMe[i] != ' ' && validateMe[i] != '-'){
+        return NULL;
+      }
+      //ensure only one '.' char
+      if(validateMe[i] == '.'){
+        if(decimalReached){
+          return NULL;
+        }
+        decimalReached = true;
+      }
+      //ensure only one '-' char
+      if(validateMe[i] == '-'){
+        if(negativeReached){
+          return NULL;
+        }
+        negativeReached = true;
+      }
+    }
+    //increment
+    alreadyCoveredIndex = commaIndex;
+    commaIndex = input.indexOf(",", alreadyCoveredIndex + 1);
+    inputs[inputSize] = validateMe.toFloat();
+    inputSize = inputSize + 1;
+  }
+  if(inputSize != 3){
+    return NULL;
+  }
+  
+  return inputs;
+}
+
 void get_posn_input(){
   while(true){
     //express that input is needed, poll until input comes
@@ -227,21 +269,23 @@ void get_posn_input(){
     while(Serial.available() == 0){};
     String input = Serial.readStringUntil("\n");
     input.trim();
+
     // if input does not have commas, crash out, better input validation will be needed when altitude comes into play
-    int commaIndex = input.indexOf(',');
-    if (commaIndex == -1) {
-      Serial.println("AWAITING INPUT: Invalid input. Please enter the coordinates in the format: latitude,longitude");
+    float* inputs = parse_and_validate_input(input);
+    Serial.println("Input sent" + input);
+    if (inputs == NULL) {
+      Serial.println("Invalid input. Please enter the coordinates in the format: latitude, longitude, ASL altitude, (Don't forget last comma");
       continue;
     }
 
     // Get target coordinate values
-    targetLat = input.substring(0, commaIndex).toFloat();
-    targetLon = input.substring(commaIndex + 1).toFloat();
-    targetAlt = 100;
+    targetLat = inputs[0];
+    targetLon = inputs[1];
+    targetAlt = ACTUAL_ASL - inputs[2]; //alt is a displacement (ANTENNA ALT - DRONE ALT)
+    free(inputs);
     break;
   }
 }
-
 
 
 void setup() {
@@ -274,6 +318,8 @@ void setup() {
   Serial.println("Serial connection established.");
 
   calibrate_tracker();
+  //clear all residual input
+  Serial.flush();
 }
 
 // 49.3414623, -123.1263600 (North)
@@ -284,7 +330,7 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   // Retreive data from serial monitor input
-  while (Serial.available() > 0) {
+  if(!Hstepper.isRunning() && !Vstepper.isRunning()){
     get_posn_input();
 
     // Calculate bearing and elevation

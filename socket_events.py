@@ -8,7 +8,6 @@ import time
 
 def gcom_connect(antenna):
     # initialize locals
-    print("HELLO DADDY PIM")
     sio = socketio.Client()
     init_pos_sent = False
 
@@ -20,7 +19,7 @@ def gcom_connect(antenna):
         count = 0
         while True:
             count += 10
-            time.sleep(2)
+            time.sleep(.1)
             sio.emit("drone_update", {"timestamp" : 10, "latitude":40 + count, "altitude":10, "longitude" : 40 + count, "vertical_velocity":10, "velocity":90, "heading":10, "battery_voltage":9 })
 
     @sio.on("pong")
@@ -35,8 +34,9 @@ def gcom_connect(antenna):
         # send initial position for CALIBRATION procedure
         if not init_pos_sent:
             # TODO: Remove these fixed coords when testing with GCOM & Drone
-            dict['longitude'] = 49.3410252
-            dict['latitude'] = -123.1264776
+            dict['longitude'] = -123.1264776
+            dict['latitude'] = 49.3410252 
+            dict['altitude'] = 114
             antenna.send_serial(dict, True)
             init_pos_sent = True
             return
