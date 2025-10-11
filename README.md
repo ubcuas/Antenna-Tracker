@@ -1,7 +1,8 @@
 # Antenna Tracker Software 2024
 
 ## Dependencies
-- python-socketio
-- websocket-client
-- serial
-- threading
+### Before Running anything please run (in a virtual environment)
+- pip install python-socketio 
+- pip install websocket-client
+- pip install pyserial
+
