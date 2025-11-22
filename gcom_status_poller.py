@@ -2,7 +2,7 @@ import requests
 import time
 
 
-url = "https://localhost:9000/api/drone/status"
+url = "https://localhost:8000/api/drone/status"
 def poll_gcom_status(url):
     while True:
         response = requests.get(url)
@@ -11,5 +11,4 @@ def poll_gcom_status(url):
             print(status)
         else:
             print(f"Failed to get status, HTTP {response.status_code}")
-
         time.sleep(5) # Poll every 5 seconds

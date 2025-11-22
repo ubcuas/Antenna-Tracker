@@ -34,9 +34,9 @@ def gcom_connect(antenna):
         # send initial position for CALIBRATION procedure
         if not init_pos_sent:
             # TODO: Remove these fixed coords when testing with GCOM & Drone
-            dict['longitude'] = -123.1264776
-            dict['latitude'] = 49.3410252 
-            dict['altitude'] = 114
+            dict['longitude'] = -123.1264
+            dict['latitude'] = 49.3410
+            dict['altitude'] = 10
             antenna.send_serial(dict, True)
             init_pos_sent = True
             return

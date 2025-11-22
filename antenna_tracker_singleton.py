@@ -1,11 +1,14 @@
 import time
 import serial
 import threading
+import requests
+import random
 
 class AntennaTrackerSingleton():
     """Class representing the antenna tracker, there can only be one."""
     _antenna = None
 
+# PRIVATE METHODS
     # SINGLETON CONSTRUCTION
     # override object class' memory alloc function (bottom of call stack when you call class constructor)
     def __new__(cls):
@@ -24,7 +27,9 @@ class AntennaTrackerSingleton():
         self.calibrated = False
         self.ser = serial.Serial(port="COM3", baudrate=9600) # starts the arduino sketch
         self.awaitingInput = False
-        self.initial_telemetry = {} # empty dict
+        self.initial_telemetry = {'latitude':  38.315,
+                                  'longitude':  -76.658,
+                                  'altitude': 10} 
 
         # private fields
         self._awatingInputLock = threading.Lock()
@@ -32,8 +37,7 @@ class AntennaTrackerSingleton():
         # create thread for flush_arduino, daemon = true => shutdown thread on main thread exit
         message_thread = threading.Thread(target=self._flush_arduino, daemon=True)
         message_thread.start()
-    
-# PRIVATE METHODS
+   
     # perpetually runs asynchronusly in the background
     def _flush_arduino(self):
         """
@@ -59,18 +63,42 @@ class AntennaTrackerSingleton():
 # PUBLIC METHODS
     def startup_calibrate(self):
         """
-        Called by main, waits for the arduino to start up, flushes arduino, sends the y message to begin calibration.
+        Called by main, waits for the arduino to start up, flushes arduino, 
+        sends the y message to begin calibration.
         """
-        # static boot timer to allow arduino to execute 
-        time.sleep(5)
-        self.ser.write(bytes(f"{self.initial_telemetry['latitude']}, {self.initial_telemetry['longitude']}, {self.initial_telemetry['altitude']},\n", "UTF-8"))
-        self.awaitingInput = False # this line breaks everything :C
+        # static boot timer to allow arduino to execute
+        time.sleep(10)
+        self.ser.write(bytes(f"{self.initial_telemetry['latitude']},"
+                               f"{self.initial_telemetry['longitude']},"
+                               f"{self.initial_telemetry['altitude']},\n", "UTF-8"))
+        self.awaitingInput = False
         time.sleep(5)
         self.ser.write(bytes("y", "UTF-8"))
         # wait until arduino flushes out calibration message
         while not self.calibrated:
             pass
        
+    def poll_gcom(self):
+        """
+        mooc
+        """
+        while True:
+            try:
+                response = requests.get('http://localhost:8000/api/drone/status', timeout=3)
+                response.raise_for_status()
+                data = response.json()
+
+                if random.randint(1, 5) == 3:
+                    data["longitude"] = 10
+                    data["latitude"] = 10
+                    data["altitude"] = 10
+                self.send_serial(data)
+            except requests.exceptions.HTTPError:
+                print(f"Failed to get status, HTTP {response.status_code}")
+                exit()
+            except Exception:
+                print("GCOM timeout")
+            time.sleep(1) # Poll every 5 seconds
 
     # As asynchronous drone_update events are passed in to the control of the program, we want to execute only the most recent one
     # when the tracker is ready.
@@ -81,16 +109,13 @@ class AntennaTrackerSingleton():
     # This should deal with asynchrony issues and overlapping drone_update_events.
 
     # mutex send_serial and perpetual async loop.
-    def send_serial(self, posn_dict, initial=False):
+    def send_serial(self, posn_dict):
         """
         send a drone update to the arduino, multiple threads could be running this asynchronously
         we want the last thread initialized to have its position sent, then dump the rest.
         """
         # simply save position for calibration if its the first transmission
         # DO NOT MOVE DRONE UNTIL AFTER CALIBRATION, AND ONLY WHILE GCOM IS RECIEVING POSN
-        if initial:
-            self.initial_telemetry = posn_dict
-            return
         # auto acquires and releases lock
         with self._awatingInputLock:
             print(f"Thread has input lock, awaitingInput: {self.awaitingInput}")
