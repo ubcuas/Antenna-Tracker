@@ -4,7 +4,7 @@ import threading
 import requests
 import random
 
-SECONDS_PER_POLL = 2.0
+SECONDS_PER_POLL = 1.0
 class AntennaTrackerSingleton():
     """Class representing the antenna tracker, there can only be one."""
     _antenna = None
@@ -29,9 +29,9 @@ class AntennaTrackerSingleton():
         self.ser = serial.Serial(port="COM3", baudrate=9600) # starts the arduino sketch
         self.awaitingInput = False
         # initial drone posn
-        self.initial_telemetry = {'latitude':  38.315,
-                                  'longitude':  -76.658,
-                                  'altitude': 10} 
+        self.initial_telemetry = {'latitude':  38.315139,
+                                  'longitude':  -76.548751,
+                                  'altitude': 50} 
 
         # private fields
         self._awatingInputLock = threading.Lock()
@@ -96,7 +96,7 @@ class AntennaTrackerSingleton():
                 exit()
             except Exception:
                 print("GCOM timeout")
-            time.sleep(3) # Poll every x seconds
+            time.sleep(SECONDS_PER_POLL) # Poll every x seconds
 
     # As asynchronous drone_update events are passed in to the control of the program, we want to execute only the most recent one
     # when the tracker is ready.

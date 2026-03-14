@@ -26,9 +26,12 @@
 
 // Define actual coordinates read from iphone
 // NOTE: This is a temporary fix until the gps module is made accurate (might best to make permanent and just change before use)
-#define ACTUAL_LAT 50.1544 // Temporary
-#define ACTUAL_LON -123.1454 // Temporary
-#define ACTUAL_ASL 115
+#define ACTUAL_LAT 38.316662 
+
+ // Temporary
+#define ACTUAL_LON -76.548365
+ // Temporary
+#define ACTUAL_ASL 0
 // this is probably accurate enough
 #define EARTH_RADIUS 6371 // Earths radius in km
 
@@ -174,24 +177,25 @@ void calibrate_tracker(){
   calculate_Bearing_and_Elevation();
 
   // Two scenarios possible if tracker is above drone
-  if (targetAlt > 0) {
-    // Scenario 1: drone is out of trackers vertical range (less than -13 degrees)
-    if (elevation > 13) {
-      Serial.println("ERROR: DRONE OUT OF RANGE. LOWER TRACKER OR RAISE DRONE AND RESTART PROGAM");
-      while(true){
-        ;
-      }
-    }
-    // Scenario 2: Drone is between 0 and -13 degrees vertically from trackers horizontal position
-    else {
-      elevation = 13 - elevation;
-    }
-  }
-  // One scenario possible if tracker is below drone
-  // Scenario 3: Tracker below drone
-  else {
-    elevation = elevation + 13;
-  }
+  // if (targetAlt > 0) {
+  //   // Scenario 1: drone is out of trackers vertical range (less than -13 degrees)
+  //   if (elevation > 13) {
+  //     Serial.println("ERROR: DRONE OUT OF RANGE. LOWER TRACKER OR RAISE DRONE AND RESTART PROGAM");
+  //     while(true){
+  //       ;
+  //     }
+  //   }
+  //   // Scenario 2: Drone is between 0 and -13 degrees vertically from trackers horizontal position
+  //   else {
+  //     elevation = 13 - elevation;
+  //   }
+  // }
+  
+  // // One scenario possible if tracker is below drone
+  // // Scenario 3: Tracker below drone
+  // else {
+  //   elevation = elevation + 13;
+  // }
 
   // Set target position
   moveStepper(bearing, Hstepper, "Hstepper");
