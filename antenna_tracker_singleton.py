@@ -4,6 +4,7 @@ import threading
 import requests
 import random
 
+SECONDS_PER_POLL = 2.0
 class AntennaTrackerSingleton():
     """Class representing the antenna tracker, there can only be one."""
     _antenna = None
@@ -27,6 +28,7 @@ class AntennaTrackerSingleton():
         self.calibrated = False
         self.ser = serial.Serial(port="COM3", baudrate=9600) # starts the arduino sketch
         self.awaitingInput = False
+        # initial drone posn
         self.initial_telemetry = {'latitude':  38.315,
                                   'longitude':  -76.658,
                                   'altitude': 10} 
@@ -53,7 +55,7 @@ class AntennaTrackerSingleton():
             print("---------------------------------------------------------------------")
             value_str = str(value, "UTF-8")
             # if message is a string response from the Arduino
-            print(value_str)
+            print(f"Serial Response: {value_str}")
             if "TRACKER CALIBRATED" in value_str.upper():
                 self.calibrated = True
             if "AWAITING INPUT" in value_str.upper():
@@ -80,7 +82,7 @@ class AntennaTrackerSingleton():
        
     def poll_gcom(self):
         """
-        mooc
+        Poll GCOM for telemetry periodically
         """
         while True:
             try:
@@ -88,17 +90,13 @@ class AntennaTrackerSingleton():
                 response.raise_for_status()
                 data = response.json()
 
-                if random.randint(1, 5) == 3:
-                    data["longitude"] = 10
-                    data["latitude"] = 10
-                    data["altitude"] = 10
                 self.send_serial(data)
             except requests.exceptions.HTTPError:
                 print(f"Failed to get status, HTTP {response.status_code}")
                 exit()
             except Exception:
                 print("GCOM timeout")
-            time.sleep(1) # Poll every 5 seconds
+            time.sleep(3) # Poll every x seconds
 
     # As asynchronous drone_update events are passed in to the control of the program, we want to execute only the most recent one
     # when the tracker is ready.

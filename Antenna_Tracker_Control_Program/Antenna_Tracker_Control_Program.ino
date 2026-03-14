@@ -26,8 +26,8 @@
 
 // Define actual coordinates read from iphone
 // NOTE: This is a temporary fix until the gps module is made accurate (might best to make permanent and just change before use)
-#define ACTUAL_LAT 49.2645884 // Temporary
-#define ACTUAL_LON -123.2465638 // Temporary
+#define ACTUAL_LAT 50.1544 // Temporary
+#define ACTUAL_LON -123.1454 // Temporary
 #define ACTUAL_ASL 115
 // this is probably accurate enough
 #define EARTH_RADIUS 6371 // Earths radius in km
@@ -218,7 +218,7 @@ void calibrate_tracker(){
 }
 
 
-// Return NULL when input brokey
+// Return NULL when input broken
 float* parse_and_validate_input(String input){
   int commaIndex = input.indexOf(",");
   int alreadyCoveredIndex = -1;
@@ -265,7 +265,7 @@ float* parse_and_validate_input(String input){
 void get_posn_input(){
   while(true){
     //express that input is needed, poll until input comes
-    Serial.println("AWAITING INPUT: Give coords or im gonna crash out.");
+    Serial.println("AWAITING INPUT: ");
     while(Serial.available() == 0){};
     String input = Serial.readStringUntil("\n");
     input.trim();
