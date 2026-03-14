@@ -28,7 +28,7 @@ class AntennaTrackerSingleton():
         self.calibrated = False
         self.ser = serial.Serial(port="COM3", baudrate=9600) # starts the arduino sketch
         self.awaitingInput = False
-        # initial drone posn
+        # NOTE: Input initial drone coords here
         self.initial_telemetry = {'latitude':  38.315139,
                                   'longitude':  -76.548751,
                                   'altitude': 50} 
